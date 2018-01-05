@@ -63,7 +63,7 @@ class Eth(RPCModule):
     '''
 
     def accounts(self):
-        raise NotImplementedError()
+        raise []
 
     def blockNumber(self):
         num = self._chain.get_canonical_head().block_number

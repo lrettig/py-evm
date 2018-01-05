@@ -123,10 +123,10 @@ class RPCServer:
 
     @property
     def chain(self):
-        return self.__chain
+        return self._chain
 
     @chain.setter
     def chain(self, new_chain):
-        self.__chain = new_chain
+        self._chain = new_chain
         for module in self.modules.values():
             module.chain = new_chain

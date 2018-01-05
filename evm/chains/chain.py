@@ -94,6 +94,9 @@ class Chain(object):
         """
         return self.get_vm().block
 
+    def get_transaction(self, transaction_hash):
+        return self.get_vm().get_transaction_by_hash(transaction_hash)
+
     def create_transaction(self, *args, **kwargs):
         """
         Passthrough helper to the current VM class.
@@ -222,13 +225,20 @@ class Chain(object):
 
         genesis_header = BlockHeader(**genesis_params)
         genesis_chain = cls(chaindb, genesis_header)
-        chaindb.persist_block_to_db(genesis_chain.get_block())
-        return cls.from_genesis_header(chaindb, genesis_header)
+        genesis_chain._reorg_with_block(genesis_chain.get_block())
+        return genesis_chain
 
     @classmethod
     def from_genesis_header(cls, chaindb, genesis_header):
         chaindb.persist_header_to_db(genesis_header)
         return cls(chaindb)
+
+    def _reorg_with_block(self, new_block):
+        self.chaindb.persist_block_to_db(new_block)
+        self.header = self.create_header_from_parent(self.get_canonical_head())
+        # TODO iterate txns for each new canonical block, directing tx hash to block hash (and number?)
+        #   and remove from pending tx pool
+        # probably remove txns in non-canon chain (really, put back in pending tx pool)
 
     #
     # Mining and Execution API
@@ -261,8 +271,7 @@ class Chain(object):
             ensure_imported_block_unchanged(imported_block, block)
             self.validate_block(imported_block)
 
-        self.chaindb.persist_block_to_db(imported_block)
-        self.header = self.create_header_from_parent(self.get_canonical_head())
+        self._reorg_with_block(imported_block)
         self.logger.debug(
             'IMPORTED_BLOCK: number %s | hash %s',
             imported_block.number,

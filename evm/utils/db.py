@@ -5,3 +5,11 @@ def make_block_number_to_hash_lookup_key(block_number):
 
 def make_block_hash_to_score_lookup_key(block_hash):
     return b'block-hash-to-score:%s' % block_hash
+
+
+def make_transaction_hash_to_block_hash_lookup_key(transaction_hash):
+    return b'transaction-hash-to-block-hash:%s' % transaction_hash
+
+
+def make_transaction_hash_to_data_lookup_key(transaction_hash):
+    return b'transaction-hash-to-data:%s' % transaction_hash
