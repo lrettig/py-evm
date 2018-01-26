@@ -12,6 +12,7 @@ from evm.constants import (
     GENESIS_PARENT_HASH,
     MAX_PREV_HEADER_DEPTH,
     MAX_UNCLES,
+    ZERO_ADDRESS,
 )
 from evm.exceptions import (
     BlockNotFound,
@@ -48,7 +49,7 @@ from .execution_context import (
 class VM(Configurable):
     """
     The VM class represents the Chain rules for a specific protocol definition
-    such as the Frontier or Homestead network.  Defining an Chain  defining
+    such as the Frontier or Homestead network.  Define a Chain defining
     individual VM classes for each fork of the protocol rules within that
     network.
     """
@@ -88,6 +89,40 @@ class VM(Configurable):
         self.clear_journal()
 
         return computation, self.block
+
+    def execute_bytecode(self, bytecode, gas):
+        """
+        Run EVM bytecode.
+
+        :param int gas: the amount of gas left
+        :param int gas_price: the price per unit gas
+        :param bytes to:
+        :param bytes sender:
+        :param int value:
+        :param bytes data:
+        :param bytes code:
+        :param bytes origin: 20-byte public address
+        :param int depth:
+        :param bytes create_address:
+        :param bytes code_address:
+        :param bool should_transfer_value:
+        :param bool is_static:
+        """
+        if gas is None:
+            gas = self.block.header.gas_limit
+        if gas_price is None:
+            gas_price = 1
+        if to is None:
+            to = ZERO_ADDRESS
+        if sender is None:
+            sender = ZERO_ADDRESS
+        if value is None:
+            value = 0
+        if data is None:
+            data = b''
+        if origin is None:
+            origin = ZERO_ADDRESS
+
 
     #
     # Mining
