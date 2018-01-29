@@ -40,6 +40,12 @@ from evm.validation import (
     validate_length_lte,
     validate_gas_limit,
 )
+from evm.vm.forks.frontier.transactions import (
+    _get_frontier_intrinsic_gas,
+)
+from evm.vm.message import (
+    Message,
+)
 
 from .execution_context import (
     ExecutionContext,
@@ -90,7 +96,7 @@ class VM(Configurable):
 
         return computation, self.block
 
-    def execute_bytecode(self, bytecode, gas):
+    def execute_bytecode(self, bytecode, gas, gas_price, to, sender, value, data, origin):
         """
         Run EVM bytecode.
 
@@ -123,6 +129,59 @@ class VM(Configurable):
         if origin is None:
             origin = ZERO_ADDRESS
 
+        # Validate the inputs
+        validate_uint256(self.gas_price, title="Transaction.gas_price")
+        validate_uint256(self.gas, title="Transaction.gas")
+        if self.to != CREATE_CONTRACT_ADDRESS:
+            validate_canonical_address(self.to, title="Transaction.to")
+        validate_uint256(self.value, title="Transaction.value")
+        validate_is_bytes(self.data, title="Transaction.data")
+        if _get_frontier_intrinsic_gas() > gas:
+            raise ValidationError("Insufficient gas")
+
+        # TODO: Unclear whether this step is necessary! Not sure yet how much validation we want to
+        # do.
+        # self.state.validate_transaction()
+
+        # Pre computation
+        gas_fee = gas * gas_price
+        with self.state.state_db() as state_db:
+            # Buy Gas
+            state_db.delta_balance(sender, -1 * gas_fee)
+
+            # Increment Nonce
+            state_db.increment_nonce(sender)
+
+            # Setup VM Message
+            message_gas = gas - intrinsic_gas
+
+            if to == constants.CREATE_CONTRACT_ADDRESS:
+                contract_address = generate_contract_address(
+                    transaction.sender,
+                    state_db.get_nonce(transaction.sender) - 1,
+                )
+                data = b''
+                code = transaction.data
+            else:
+                contract_address = None
+                data = transaction.data
+                code = state_db.get_code(transaction.to)
+
+
+        # Construct a message
+        message = Message(
+            gas=gas,
+            gas_price=gas_price,
+            to=to,
+            sender=sender,
+            value=value,
+            data=data,
+            code=bytecode,
+            create_address=contract_address,
+        )
+
+        # Execute it in the VM
+        # Return the result
 
     #
     # Mining
