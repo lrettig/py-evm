@@ -9,6 +9,7 @@ from eth_utils import (
 )
 
 from evm.constants import (
+    CREATE_CONTRACT_ADDRESS,
     GENESIS_PARENT_HASH,
     MAX_PREV_HEADER_DEPTH,
     MAX_UNCLES,
@@ -22,6 +23,9 @@ from evm.db.backends.memory import MemoryDB
 from evm.db.chain import ChainDB
 from evm.rlp.headers import (
     BlockHeader,
+)
+from evm.utils.address import (
+    generate_contract_address,
 )
 from evm.utils.datatypes import (
     Configurable,
@@ -37,8 +41,11 @@ from evm.utils.keccak import (
     keccak,
 )
 from evm.validation import (
-    validate_length_lte,
+    validate_canonical_address,
     validate_gas_limit,
+    validate_is_bytes,
+    validate_length_lte,
+    validate_uint256,
 )
 from evm.vm.forks.frontier.transactions import (
     _get_frontier_intrinsic_gas,
@@ -96,7 +103,18 @@ class VM(Configurable):
 
         return computation, self.block
 
-    def execute_bytecode(self, bytecode, gas, gas_price, to, sender, value, data, origin):
+    def execute_bytecode(self,
+                         bytecode,
+                         gas,
+                         gas_price,
+                         to,
+                         sender,
+                         value,
+                         data,
+                         origin,
+                         create_address,
+                         code_address,
+                         ):
         """
         Run EVM bytecode.
 
@@ -111,8 +129,6 @@ class VM(Configurable):
         :param int depth:
         :param bytes create_address:
         :param bytes code_address:
-        :param bool should_transfer_value:
-        :param bool is_static:
         """
         if gas is None:
             gas = self.block.header.gas_limit
@@ -152,21 +168,16 @@ class VM(Configurable):
             # Increment Nonce
             state_db.increment_nonce(sender)
 
-            # Setup VM Message
-            message_gas = gas - intrinsic_gas
-
-            if to == constants.CREATE_CONTRACT_ADDRESS:
+            if to == CREATE_CONTRACT_ADDRESS:
                 contract_address = generate_contract_address(
-                    transaction.sender,
-                    state_db.get_nonce(transaction.sender) - 1,
+                    sender,
+                    state_db.get_nonce(sender) - 1,
                 )
                 data = b''
-                code = transaction.data
+                code = data
             else:
-                contract_address = None
-                data = transaction.data
-                code = state_db.get_code(transaction.to)
-
+                contract_address = code_address
+                code = bytecode
 
         # Construct a message
         message = Message(
@@ -176,12 +187,19 @@ class VM(Configurable):
             sender=sender,
             value=value,
             data=data,
-            code=bytecode,
+            code=code,
             create_address=contract_address,
+            code_address=code_address,
         )
 
         # Execute it in the VM
+        if message.is_create:
+            computation = self.state.get_computation(message).apply_create_message()
+        else:
+            computation = self.state.get_computation(message).apply_message()
+
         # Return the result
+        return computation
 
     #
     # Mining
