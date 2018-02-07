@@ -47,9 +47,6 @@ from evm.validation import (
     validate_length_lte,
     validate_uint256,
 )
-from evm.vm.forks.frontier.transactions import (
-    _get_frontier_intrinsic_gas,
-)
 from evm.vm.message import (
     Message,
 )
@@ -112,8 +109,8 @@ class VM(Configurable):
                          value,
                          data,
                          origin,
-                         create_address,
-                         code_address,
+                         # create_address,
+                         code_address=None,
                          ):
         """
         Run EVM bytecode.
@@ -152,8 +149,8 @@ class VM(Configurable):
             validate_canonical_address(self.to, title="Transaction.to")
         validate_uint256(self.value, title="Transaction.value")
         validate_is_bytes(self.data, title="Transaction.data")
-        if _get_frontier_intrinsic_gas() > gas:
-            raise ValidationError("Insufficient gas")
+        # if _get_frontier_intrinsic_gas() > gas:
+        #     raise ValidationError("Insufficient gas")
 
         # TODO: Unclear whether this step is necessary! Not sure yet how much validation we want to
         # do.
