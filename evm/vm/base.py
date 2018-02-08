@@ -9,11 +9,9 @@ from eth_utils import (
 )
 
 from evm.constants import (
-    CREATE_CONTRACT_ADDRESS,
     GENESIS_PARENT_HASH,
     MAX_PREV_HEADER_DEPTH,
     MAX_UNCLES,
-    ZERO_ADDRESS,
 )
 from evm.exceptions import (
     BlockNotFound,
@@ -23,9 +21,6 @@ from evm.db.backends.memory import MemoryDB
 from evm.db.chain import ChainDB
 from evm.rlp.headers import (
     BlockHeader,
-)
-from evm.utils.address import (
-    generate_contract_address,
 )
 from evm.utils.datatypes import (
     Configurable,
@@ -41,11 +36,8 @@ from evm.utils.keccak import (
     keccak,
 )
 from evm.validation import (
-    validate_canonical_address,
     validate_gas_limit,
-    validate_is_bytes,
     validate_length_lte,
-    validate_uint256,
 )
 from evm.vm.message import (
     Message,
