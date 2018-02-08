@@ -184,57 +184,53 @@ def test_vm_fixtures(fixture, vm_class):
 
         # Update state_root manually
         vm.block.header.state_root = computation.vm_state.state_root
-        check_computation(computation, vm, fixture)
 
+        if 'post' in fixture:
+            #
+            # Success checks
+            #
+            assert not computation.is_error
 
-def check_computation(computation, vm, fixture):
+            log_entries = computation.get_log_entries()
+            if 'logs' in fixture:
+                actual_logs_hash = hash_log_entries(log_entries)
+                expected_logs_hash = fixture['logs']
+                assert expected_logs_hash == actual_logs_hash
+            elif log_entries:
+                raise AssertionError("Got log entries: {0}".format(log_entries))
 
-    if 'post' in fixture:
-        #
-        # Success checks
-        #
-        assert not computation.is_error
+            expected_output = fixture['out']
+            assert computation.output == expected_output
 
-        log_entries = computation.get_log_entries()
-        if 'logs' in fixture:
-            actual_logs_hash = hash_log_entries(log_entries)
-            expected_logs_hash = fixture['logs']
-            assert expected_logs_hash == actual_logs_hash
-        elif log_entries:
-            raise AssertionError("Got log entries: {0}".format(log_entries))
+            gas_meter = computation.gas_meter
 
-        expected_output = fixture['out']
-        assert computation.output == expected_output
+            expected_gas_remaining = fixture['gas']
+            actual_gas_remaining = gas_meter.gas_remaining
+            gas_delta = actual_gas_remaining - expected_gas_remaining
+            assert gas_delta == 0, "Gas difference: {0}".format(gas_delta)
 
-        gas_meter = computation.gas_meter
+            call_creates = fixture.get('callcreates', [])
+            assert len(computation.children) == len(call_creates)
 
-        expected_gas_remaining = fixture['gas']
-        actual_gas_remaining = gas_meter.gas_remaining
-        gas_delta = actual_gas_remaining - expected_gas_remaining
-        assert gas_delta == 0, "Gas difference: {0}".format(gas_delta)
+            call_creates = fixture.get('callcreates', [])
+            for child_computation, created_call in zip(computation.children, call_creates):
+                to_address = created_call['destination']
+                data = created_call['data']
+                gas_limit = created_call['gasLimit']
+                value = created_call['value']
 
-        call_creates = fixture.get('callcreates', [])
-        assert len(computation.children) == len(call_creates)
+                assert child_computation.msg.to == to_address
+                assert data == child_computation.msg.data or child_computation.msg.code
+                assert gas_limit == child_computation.msg.gas
+                assert value == child_computation.msg.value
+            post_state = fixture['post']
+        else:
+            #
+            # Error checks
+            #
+            assert computation.is_error
+            assert isinstance(computation._error, VMError)
+            post_state = fixture['pre']
 
-        call_creates = fixture.get('callcreates', [])
-        for child_computation, created_call in zip(computation.children, call_creates):
-            to_address = created_call['destination']
-            data = created_call['data']
-            gas_limit = created_call['gasLimit']
-            value = created_call['value']
-
-            assert child_computation.msg.to == to_address
-            assert data == child_computation.msg.data or child_computation.msg.code
-            assert gas_limit == child_computation.msg.gas
-            assert value == child_computation.msg.value
-        post_state = fixture['post']
-    else:
-        #
-        # Error checks
-        #
-        assert computation.is_error
-        assert isinstance(computation._error, VMError)
-        post_state = fixture['pre']
-
-    with vm.state.state_db(read_only=True) as state_db:
-        verify_state_db(post_state, state_db)
+        with vm.state.state_db(read_only=True) as state_db:
+            verify_state_db(post_state, state_db)

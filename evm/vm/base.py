@@ -36,8 +36,8 @@ from evm.utils.keccak import (
     keccak,
 )
 from evm.validation import (
-    validate_gas_limit,
     validate_length_lte,
+    validate_gas_limit,
 )
 from evm.vm.message import (
     Message,
