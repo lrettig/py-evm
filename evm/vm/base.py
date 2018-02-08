@@ -109,72 +109,7 @@ class VM(Configurable):
                          data,
                          code,
                          origin,
-                         # create_address=None,
-                         code_address=None,
                          ):
-        """
-        Run EVM bytecode.
-
-        :param int gas: the amount of gas left
-        :param int gas_price: the price per unit gas
-        :param bytes to:
-        :param bytes sender:
-        :param int value:
-        :param bytes data:
-        :param bytes code:
-        :param bytes origin: 20-byte public address
-        :param int depth:
-        :param bytes create_address:
-        :param bytes code_address:
-        """
-        # if gas is None:
-        #     gas = self.block.header.gas_limit
-        # if gas_price is None:
-        #     gas_price = 1
-        # if to is None:
-        #     to = ZERO_ADDRESS
-        # if sender is None:
-        #     sender = ZERO_ADDRESS
-        # if value is None:
-        #     value = 0
-        # if data is None:
-        #     data = b''
-        # if origin is None:
-        #     origin = ZERO_ADDRESS
-
-        # # Validate the inputs
-        # validate_uint256(gas_price, title="gas_price")
-        # validate_uint256(gas, title="gas")
-        # if to != CREATE_CONTRACT_ADDRESS:
-        #     validate_canonical_address(to, title="to")
-        # validate_uint256(value, title="value")
-        # validate_is_bytes(data, title="data")
-        # if _get_frontier_intrinsic_gas() > gas:
-        #     raise ValidationError("Insufficient gas")
-
-        # TODO: Unclear whether this step is necessary! Not sure yet how much validation we want to
-        # do.
-        # self.state.validate_transaction()
-
-        # Pre computation
-        # gas_fee = gas * gas_price
-        # with self.state.state_db() as state_db:
-        #     # Buy Gas
-        #     state_db.delta_balance(sender, -1 * gas_fee)
-
-        #     # Increment Nonce
-        #     state_db.increment_nonce(sender)
-
-        #     if to == CREATE_CONTRACT_ADDRESS:
-        #         contract_address = generate_contract_address(
-        #             sender,
-        #             state_db.get_nonce(sender) - 1,
-        #         )
-        #         data = b''
-        #         code = data
-        #     else:
-        #         contract_address = code_address
-
         # Construct a message
         message = Message(
             gas=gas,
@@ -184,19 +119,10 @@ class VM(Configurable):
             value=value,
             data=data,
             code=code,
-            # create_address=contract_address,
-            code_address=code_address,
         )
 
         # Execute it in the VM
         return self.state.get_computation(message).apply_computation(self.state, message)
-        # if message.is_create:
-        #     computation = self.state.get_computation(message).apply_create_message()
-        # else:
-        #     computation = self.state.get_computation(message).apply_message()
-
-        # Return the result
-        # return computation
 
     #
     # Mining
