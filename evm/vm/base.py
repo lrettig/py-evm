@@ -101,15 +101,15 @@ class VM(Configurable):
         return computation, self.block
 
     def execute_bytecode(self,
-                         bytecode,
                          gas,
                          gas_price,
                          to,
                          sender,
                          value,
                          data,
+                         code,
                          origin,
-                         # create_address,
+                         # create_address=None,
                          code_address=None,
                          ):
         """
@@ -127,28 +127,28 @@ class VM(Configurable):
         :param bytes create_address:
         :param bytes code_address:
         """
-        if gas is None:
-            gas = self.block.header.gas_limit
-        if gas_price is None:
-            gas_price = 1
-        if to is None:
-            to = ZERO_ADDRESS
-        if sender is None:
-            sender = ZERO_ADDRESS
-        if value is None:
-            value = 0
-        if data is None:
-            data = b''
-        if origin is None:
-            origin = ZERO_ADDRESS
+        # if gas is None:
+        #     gas = self.block.header.gas_limit
+        # if gas_price is None:
+        #     gas_price = 1
+        # if to is None:
+        #     to = ZERO_ADDRESS
+        # if sender is None:
+        #     sender = ZERO_ADDRESS
+        # if value is None:
+        #     value = 0
+        # if data is None:
+        #     data = b''
+        # if origin is None:
+        #     origin = ZERO_ADDRESS
 
-        # Validate the inputs
-        validate_uint256(self.gas_price, title="Transaction.gas_price")
-        validate_uint256(self.gas, title="Transaction.gas")
-        if self.to != CREATE_CONTRACT_ADDRESS:
-            validate_canonical_address(self.to, title="Transaction.to")
-        validate_uint256(self.value, title="Transaction.value")
-        validate_is_bytes(self.data, title="Transaction.data")
+        # # Validate the inputs
+        # validate_uint256(gas_price, title="gas_price")
+        # validate_uint256(gas, title="gas")
+        # if to != CREATE_CONTRACT_ADDRESS:
+        #     validate_canonical_address(to, title="to")
+        # validate_uint256(value, title="value")
+        # validate_is_bytes(data, title="data")
         # if _get_frontier_intrinsic_gas() > gas:
         #     raise ValidationError("Insufficient gas")
 
@@ -157,24 +157,23 @@ class VM(Configurable):
         # self.state.validate_transaction()
 
         # Pre computation
-        gas_fee = gas * gas_price
-        with self.state.state_db() as state_db:
-            # Buy Gas
-            state_db.delta_balance(sender, -1 * gas_fee)
+        # gas_fee = gas * gas_price
+        # with self.state.state_db() as state_db:
+        #     # Buy Gas
+        #     state_db.delta_balance(sender, -1 * gas_fee)
 
-            # Increment Nonce
-            state_db.increment_nonce(sender)
+        #     # Increment Nonce
+        #     state_db.increment_nonce(sender)
 
-            if to == CREATE_CONTRACT_ADDRESS:
-                contract_address = generate_contract_address(
-                    sender,
-                    state_db.get_nonce(sender) - 1,
-                )
-                data = b''
-                code = data
-            else:
-                contract_address = code_address
-                code = bytecode
+        #     if to == CREATE_CONTRACT_ADDRESS:
+        #         contract_address = generate_contract_address(
+        #             sender,
+        #             state_db.get_nonce(sender) - 1,
+        #         )
+        #         data = b''
+        #         code = data
+        #     else:
+        #         contract_address = code_address
 
         # Construct a message
         message = Message(
@@ -185,18 +184,19 @@ class VM(Configurable):
             value=value,
             data=data,
             code=code,
-            create_address=contract_address,
+            # create_address=contract_address,
             code_address=code_address,
         )
 
         # Execute it in the VM
-        if message.is_create:
-            computation = self.state.get_computation(message).apply_create_message()
-        else:
-            computation = self.state.get_computation(message).apply_message()
+        return self.state.get_computation(message).apply_computation(self.state, message)
+        # if message.is_create:
+        #     computation = self.state.get_computation(message).apply_create_message()
+        # else:
+        #     computation = self.state.get_computation(message).apply_message()
 
         # Return the result
-        return computation
+        # return computation
 
     #
     # Mining

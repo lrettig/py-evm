@@ -132,23 +132,7 @@ def vm_class(request):
         assert False, "Unsupported VM: {0}".format(request.param)
 
 
-def test_vm_fixtures(fixture, vm_class):
-    chaindb = ChainDB(get_db_backend())
-    header = BlockHeader(
-        coinbase=fixture['env']['currentCoinbase'],
-        difficulty=fixture['env']['currentDifficulty'],
-        block_number=fixture['env']['currentNumber'],
-        gas_limit=fixture['env']['currentGasLimit'],
-        timestamp=fixture['env']['currentTimestamp'],
-    )
-    vm = vm_class(header=header, chaindb=chaindb)
-    vm_state = vm.state
-    with vm_state.state_db() as state_db:
-        setup_state_db(fixture['pre'], state_db)
-        code = state_db.get_code(fixture['exec']['address'])
-    # Update state_root manually
-    vm.block.header.state_root = vm_state.state_root
-
+def fixture_to_computation(fixture, code, vm):
     message = Message(
         origin=fixture['exec']['origin'],
         to=fixture['exec']['address'],
@@ -159,12 +143,51 @@ def test_vm_fixtures(fixture, vm_class):
         gas=fixture['exec']['gas'],
         gas_price=fixture['exec']['gasPrice'],
     )
-    computation = vm.state.get_computation(message).apply_computation(
+    return vm.state.get_computation(message).apply_computation(
         vm.state,
         message,
     )
-    # Update state_root manually
-    vm.block.header.state_root = computation.vm_state.state_root
+
+
+def fixture_to_bytecode_computation(fixture, code, vm):
+    return vm.execute_bytecode(
+        origin=fixture['exec']['origin'],
+        to=fixture['exec']['address'],
+        sender=fixture['exec']['caller'],
+        value=fixture['exec']['value'],
+        data=fixture['exec']['data'],
+        code=code,
+        gas=fixture['exec']['gas'],
+        gas_price=fixture['exec']['gasPrice'],
+    )
+
+
+def test_vm_fixtures(fixture, vm_class):
+    for computation_getter in (fixture_to_computation, fixture_to_bytecode_computation):
+        chaindb = ChainDB(get_db_backend())
+        header = BlockHeader(
+            coinbase=fixture['env']['currentCoinbase'],
+            difficulty=fixture['env']['currentDifficulty'],
+            block_number=fixture['env']['currentNumber'],
+            gas_limit=fixture['env']['currentGasLimit'],
+            timestamp=fixture['env']['currentTimestamp'],
+        )
+        vm = vm_class(header=header, chaindb=chaindb)
+        vm_state = vm.state
+        with vm_state.state_db() as state_db:
+            setup_state_db(fixture['pre'], state_db)
+            code = state_db.get_code(fixture['exec']['address'])
+        # Update state_root manually
+        vm.block.header.state_root = vm_state.state_root
+
+        computation = computation_getter(fixture, code, vm)
+
+        # Update state_root manually
+        vm.block.header.state_root = computation.vm_state.state_root
+        check_computation(computation, vm, fixture)
+
+
+def check_computation(computation, vm, fixture):
 
     if 'post' in fixture:
         #
