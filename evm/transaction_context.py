@@ -1,5 +1,6 @@
 from evm.validation import (
     validate_canonical_address,
+    validate_sig_hash,
     validate_uint256,
 )
 
@@ -25,3 +26,14 @@ class BaseTransactionContext(object):
     @property
     def origin(self):
         return self._origin
+
+
+class ShardingTransactionContext(BaseTransactionContext):
+    def __init__(self, gas_price, origin, sig_hash):
+        super(ShardingTransactionContext, self).__init__(gas_price, origin)
+        validate_sig_hash(sig_hash, title="TransactionContext.sig_hash")
+        self._sig_hash = sig_hash
+
+    @property
+    def sig_hash(self):
+        return self._sig_hash

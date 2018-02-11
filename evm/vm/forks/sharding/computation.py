@@ -161,9 +161,6 @@ class ShardingComputation(SpuriousDragonComputation):
 
         child_message = ShardingMessage(
             gas=gas,
-            gas_price=self.msg.gas_price,
-            origin=self.msg.origin,
-            sig_hash=self.msg.sig_hash,
             to=to,
             value=value,
             data=data,

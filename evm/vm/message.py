@@ -11,7 +11,6 @@ from evm.validation import (
     validate_uint256,
     validate_is_boolean,
     validate_access_list,
-    validate_sig_hash,
 )
 
 
@@ -122,15 +121,12 @@ class ShardingMessage(Message):
 
     def __init__(self,
                  gas,
-                 gas_price,
                  to,
-                 sig_hash,
                  sender,
                  value,
                  data,
                  code,
                  transaction_gas_limit,
-                 origin=None,
                  access_list=None,
                  depth=0,
                  is_create=False,
@@ -139,13 +135,11 @@ class ShardingMessage(Message):
                  is_static=False):
         super(ShardingMessage, self).__init__(
             gas=gas,
-            gas_price=gas_price,
             to=to,
             sender=sender,
             value=value,
             data=data,
             code=code,
-            origin=origin,
             depth=depth,
             create_address=to,
             code_address=code_address,
@@ -158,9 +152,6 @@ class ShardingMessage(Message):
 
         validate_is_boolean(is_create, title="Message.is_create")
         self.is_create = is_create
-
-        validate_sig_hash(sig_hash, title="Message.sig_hash")
-        self.sig_hash = sig_hash
 
         if access_list is not None:
             validate_access_list(access_list)
