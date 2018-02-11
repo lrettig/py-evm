@@ -31,7 +31,7 @@ class BaseTransactionContext(object):
 class ShardingTransactionContext(BaseTransactionContext):
     def __init__(self, gas_price, origin, sig_hash):
         super(ShardingTransactionContext, self).__init__(gas_price, origin)
-        validate_sig_hash(sig_hash, title="TransactionContext.sig_hash")
+        validate_sig_hash(sig_hash, title="ShardingTransactionContext.sig_hash")
         self._sig_hash = sig_hash
 
     @property
