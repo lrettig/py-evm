@@ -61,7 +61,7 @@ class ShardingComputation(SpuriousDragonComputation):
         if gas_price is None:
             gas_price = 0
 
-        transaction_gas = self.msg.transaction_gas_limit
+        transaction_gas = self.transaction_context.transaction_gas_limit
         gas_remaining = self.get_gas_remaining()
         gas_refunded = self.get_gas_refund()
         gas_used = transaction_gas - gas_remaining
@@ -156,7 +156,7 @@ class ShardingComputation(SpuriousDragonComputation):
                 self.vm_state.commit(snapshot)
             return computation
 
-    def prepare_child_message(self, gas, to, value, data, code, transaction_gas_limit, **kwargs):
+    def prepare_child_message(self, gas, to, value, data, code, **kwargs):
         kwargs.setdefault('sender', self.msg.storage_address)
 
         child_message = ShardingMessage(
@@ -165,7 +165,6 @@ class ShardingComputation(SpuriousDragonComputation):
             value=value,
             data=data,
             code=code,
-            transaction_gas_limit=transaction_gas_limit,
             depth=self.msg.depth + 1,
             access_list=self.msg.access_list,
             **kwargs

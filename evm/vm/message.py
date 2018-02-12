@@ -117,7 +117,6 @@ class Message(object):
 class ShardingMessage(Message):
 
     is_create = False
-    transaction_gas_limit = None
 
     def __init__(self,
                  gas,
@@ -126,7 +125,6 @@ class ShardingMessage(Message):
                  value,
                  data,
                  code,
-                 transaction_gas_limit,
                  access_list=None,
                  depth=0,
                  is_create=False,
@@ -146,9 +144,6 @@ class ShardingMessage(Message):
             should_transfer_value=should_transfer_value,
             is_static=is_static,
         )
-
-        validate_uint256(transaction_gas_limit, title="Message.transaction_gas_limit")
-        self.transaction_gas_limit = transaction_gas_limit
 
         validate_is_boolean(is_create, title="Message.is_create")
         self.is_create = is_create

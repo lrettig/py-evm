@@ -18,6 +18,9 @@ from evm.constants import (
     ENTRY_POINT,
     EMPTY_SHA3,
 )
+from evm.transaction_context import (
+    ShardingTransactionContext,
+)
 from evm.vm.message import (
     ShardingMessage,
 )
@@ -301,24 +304,27 @@ def test_call_checks_signature(vm, v, r, s):
     transaction = UserAccountTransaction(**merge(DEFAULT_TX_PARAMS, {"v": v, "r": r, "s": s}))
     message_params = {
         "gas": transaction.gas,
-        "gas_price": transaction.gas_price,
         "to": transaction.to,
-        "sig_hash": transaction.sig_hash,
         "sender": ENTRY_POINT,
         "value": 0,
         "code": ACCOUNT_CODE,
-        "transaction_gas_limit": transaction.gas,
         "is_create": False,
         "access_list": transaction.prefix_list,
     }
     message = ShardingMessage(**assoc(message_params, "data", transaction.data))
-    computation = vm.state.get_computation(message)
+    transaction_context = ShardingTransactionContext(
+        gas_price=transaction.gas_price,
+        origin=ENTRY_POINT,
+        sig_hash=transaction.sig_hash,
+        transaction_gas_limit=transaction.gas,
+    )
+    computation = vm.state.get_computation(message, transaction_context)
     computation = computation.apply_message()
     assert computation.is_error
 
     # error is due to bad signature, so with tx should pass with original one
     message = ShardingMessage(**assoc(message_params, "data", SIGNED_DEFAULT_TRANSACTION.data))
-    computation = vm.state.get_computation(message)
+    computation = vm.state.get_computation(message, transaction_context)
     computation = computation.apply_message()
     assert computation.is_success
 
