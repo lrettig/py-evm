@@ -107,7 +107,7 @@ class ShardingVMState(ByzantiumVMState):
         )
         transaction_context = self.get_transaction_context_class()(
             gas_price=transaction.gas_price,
-            origin=transaction.sender,
+            origin=ENTRY_POINT,
             sig_hash=transaction.sig_hash,
         )
 
