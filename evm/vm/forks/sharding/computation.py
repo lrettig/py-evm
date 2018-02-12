@@ -98,6 +98,7 @@ class ShardingComputation(SpuriousDragonComputation):
         computation = self.apply_computation(
             self.vm_state,
             self.msg,
+            self.transaction_context,
         )
 
         if computation.is_error:
