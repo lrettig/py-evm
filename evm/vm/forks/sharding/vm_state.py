@@ -16,10 +16,6 @@ from evm.exceptions import (
     IncorrectContractCreationAddress,
 )
 
-from evm.transaction_context import (
-    ShardingTransactionContext,
-)
-
 from evm.vm.message import (
     ShardingMessage,
 )
@@ -42,6 +38,7 @@ from evm.vm.forks.frontier.constants import (
 
 from .blocks import ShardingBlock
 from .computation import ShardingComputation
+from .transaction_context import ShardingTransactionContext
 from .validation import validate_sharding_transaction
 
 

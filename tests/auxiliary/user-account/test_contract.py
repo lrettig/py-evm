@@ -18,14 +18,14 @@ from evm.constants import (
     ENTRY_POINT,
     EMPTY_SHA3,
 )
-from evm.transaction_context import (
-    ShardingTransactionContext,
-)
 from evm.vm.message import (
     ShardingMessage,
 )
 from evm.vm.forks.sharding import (
     ShardingVM,
+)
+from evm.vm.forks.sharding.transaction_context import (
+    ShardingTransactionContext,
 )
 from evm.vm.forks.sharding.transactions import (
     ShardingTransaction,
