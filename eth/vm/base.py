@@ -244,6 +244,30 @@ class BaseVM(Configurable, ABC):
         """
         raise NotImplementedError("VM classes must implement this method")
 
+    @staticmethod
+    @abstractmethod
+    def get_devfund_reward() -> int:
+        """
+        Return the amount in **wei** that should be given to the dev fund as a reward
+        for this block.
+
+          .. note::
+            This is an abstract method that must be implemented in subclasses
+        """
+        raise NotImplementedError("VM classes must implement this method")
+
+    @staticmethod
+    @abstractmethod
+    def get_devfund_beneficiary() -> Address:
+        """
+        Return the address that should be given to the dev fund reward
+        for this block.
+
+          .. note::
+            This is an abstract method that must be implemented in subclasses
+        """
+        raise NotImplementedError("VM classes must implement this method")
+
     @classmethod
     @abstractmethod
     def get_nephew_reward(cls) -> int:

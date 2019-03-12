@@ -1,3 +1,7 @@
+from eth_typing import (
+    Address
+)
+
 from typing import (  # noqa: F401
     Type,
 )
@@ -10,7 +14,7 @@ from eth.vm.forks.byzantium import (
 from eth.vm.state import BaseState  # noqa: F401
 
 from .blocks import PetersburgBlock
-from .constants import EIP1234_BLOCK_REWARD
+from .constants import EIP1234_BLOCK_REWARD, EIP1789_DEVFUND_REWARD, EIP1789_DEVFUND_BENEFICIARY
 from .headers import (
     compute_petersburg_difficulty,
     configure_petersburg_header,
@@ -36,3 +40,30 @@ class PetersburgVM(ByzantiumVM):
     @staticmethod
     def get_block_reward() -> int:
         return EIP1234_BLOCK_REWARD
+
+    @staticmethod
+    def get_devfund_reward() -> int:
+        return EIP1789_DEVFUND_REWARD
+
+    @staticmethod
+    def get_devfund_beneficiary() -> Address:
+        return EIP1789_DEVFUND_BENEFICIARY
+
+    #
+    # Finalization
+    #
+    def finalize_block(self, block: BaseBlock) -> BaseBlock:
+        """
+        Perform any finalization steps like awarding the block mining reward.
+        """
+        devfund_reward = self.get_devfund_reward()
+        devfund_beneficiary = self.get_devfund_beneficiary()
+
+        self.state.account_db.delta_balance(devfund_beneficiary, devfund_reward)
+        self.logger.debug(
+            "DEVDFUND REWARD: %s -> %s",
+            devfund_reward,
+            devfund_beneficiary,
+        )
+
+        return super(block)
